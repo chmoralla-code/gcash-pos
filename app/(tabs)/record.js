@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { Audio } from 'expo-audio';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import { createAudioPlayer } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../src/constants';
 import { useTheme } from '../../src/ThemeContext';
@@ -13,7 +13,6 @@ import { createBackup } from '../../src/backupService';
 
 export default function RecordSaleScreen() {
   const { colors: C } = useTheme();
-  const router = useRouter();
   const [type, setType] = useState('cashin');
   const [amount, setAmount] = useState('');
   const [fee, setFee] = useState(0);
@@ -29,9 +28,8 @@ export default function RecordSaleScreen() {
 
   const playSound = async () => {
     try {
-      const sound = new Audio.Sound({ uri: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg' });
-      await sound.playAsync();
-      setTimeout(() => sound.unloadAsync(), 1000);
+      const player = createAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg' });
+      player.play();
     } catch (e) { /* sound optional */ }
   };
 

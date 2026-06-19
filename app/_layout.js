@@ -2,7 +2,6 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../src/ThemeContext';
 import { initDatabase, getTelegramSettings, getAppSetting } from '../src/database';
 import { createBackup } from '../src/backupService';
@@ -11,21 +10,15 @@ import PinScreen from '../src/PinScreen';
 
 async function setupNotifications() {
   try {
+    const Notifications = require('expo-notifications');
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') return;
-
-    // Cancel existing and schedule end-of-day reminder
     await Notifications.cancelAllScheduledNotificationsAsync();
-
-    // Schedule at 8 PM daily
     await Notifications.scheduleNotificationAsync({
-      content: {
-        title: '📊 End of Day',
-        body: 'Don\'t forget to check today\'s sales total!',
-      },
+      content: { title: '📊 End of Day', body: 'Check today\'s sales total!' },
       trigger: { hour: 20, minute: 0, repeats: true },
     });
-  } catch (e) { /* optional */ }
+  } catch (e) { /* notifications optional */ }
 }
 
 function AppContent({ children }) {
@@ -40,18 +33,17 @@ function AppContent({ children }) {
 
 function RootLayoutInner() {
   const [ready, setReady] = useState(false);
-  const [pinRequired, setPinRequired] = useState(null); // null=loading, true/false
+  const [pinRequired, setPinRequired] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
     async function setup() {
       try {
         await initDatabase();
         await createBackup();
-        await setupNotifications();
-
+        setupNotifications().catch(() => {});
         const pin = await getAppSetting('appPin');
-        setPinRequired(!!pin);
-
+        if (mounted) setPinRequired(!!pin);
         const tgSettings = await getTelegramSettings();
         if (tgSettings?.auto_send && tgSettings?.bot_token && tgSettings?.chat_id) {
           sendDailySummary().catch(() => {});
@@ -59,9 +51,10 @@ function RootLayoutInner() {
       } catch (e) {
         console.error('Setup error:', e);
       }
-      setReady(true);
+      if (mounted) setReady(true);
     }
     setup();
+    return () => { mounted = false; };
   }, []);
 
   if (!ready) {
