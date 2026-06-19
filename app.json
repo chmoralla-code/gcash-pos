@@ -43,6 +43,13 @@
     ],
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0d810cfc-db6d-4805-a5d1-6e0bf36988e0"
+      }
+    },
+    "owner": "chmoralla-codes-team"
   }
 }
