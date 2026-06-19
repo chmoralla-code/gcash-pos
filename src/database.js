@@ -5,11 +5,10 @@ let db = null;
 export async function initDatabase() {
   db = await SQLite.openDatabaseAsync('gcash_pos.db');
 
-  // Create tables
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS fee_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT NOT NULL,
+      type TEXT DEFAULT 'all',
       min_amount REAL NOT NULL,
       max_amount REAL,
       fee_amount REAL NOT NULL,
@@ -38,48 +37,31 @@ export async function initDatabase() {
     );
   `);
 
-  // Ensure default telegram row exists
   const tgRows = await db.getAllAsync('SELECT id FROM telegram_settings WHERE id = 1');
   if (tgRows.length === 0) {
     await db.runAsync(
       'INSERT INTO telegram_settings (id, bot_token, chat_id, auto_send, last_sent_date) VALUES (1, ?, ?, 1, ?)',
-      '',
-      '',
-      ''
+      '', '', ''
     );
   }
 
   return db;
 }
 
-export function getDb() {
-  return db;
-}
+export function getDb() { return db; }
 
-// ─── Fee Settings ─────────────────────────────────────────────
+// ─── Fee Settings (single list for both cashin & cashout) ─────
 
-export async function getFeeSettings(type) {
+export async function getFeeSettings() {
   if (!db) await initDatabase();
-  const rows = await db.getAllAsync(
-    'SELECT * FROM fee_settings WHERE type = ? ORDER BY min_amount ASC',
-    type
-  );
-  return rows;
+  return await db.getAllAsync('SELECT * FROM fee_settings ORDER BY min_amount ASC');
 }
 
-export async function getAllFeeSettings() {
-  if (!db) await initDatabase();
-  return await db.getAllAsync('SELECT * FROM fee_settings ORDER BY type, min_amount ASC');
-}
-
-export async function addFeeSetting(type, minAmount, maxAmount, feeAmount) {
+export async function addFeeSetting(minAmount, maxAmount, feeAmount) {
   if (!db) await initDatabase();
   const result = await db.runAsync(
     'INSERT INTO fee_settings (type, min_amount, max_amount, fee_amount) VALUES (?, ?, ?, ?)',
-    type,
-    minAmount,
-    maxAmount || null,
-    feeAmount
+    'all', minAmount, maxAmount || null, feeAmount
   );
   return result.lastInsertRowId;
 }
@@ -88,10 +70,7 @@ export async function updateFeeSetting(id, minAmount, maxAmount, feeAmount) {
   if (!db) await initDatabase();
   await db.runAsync(
     'UPDATE fee_settings SET min_amount = ?, max_amount = ?, fee_amount = ? WHERE id = ?',
-    minAmount,
-    maxAmount || null,
-    feeAmount,
-    id
+    minAmount, maxAmount || null, feeAmount, id
   );
 }
 
@@ -100,13 +79,11 @@ export async function deleteFeeSetting(id) {
   await db.runAsync('DELETE FROM fee_settings WHERE id = ?', id);
 }
 
-export async function calculateFee(type, amount) {
+export async function calculateFee(amount) {
   if (!db) await initDatabase();
   const rows = await db.getAllAsync(
-    'SELECT fee_amount FROM fee_settings WHERE type = ? AND min_amount <= ? AND (max_amount IS NULL OR max_amount >= ?) ORDER BY min_amount DESC LIMIT 1',
-    type,
-    amount,
-    amount
+    'SELECT fee_amount FROM fee_settings WHERE min_amount <= ? AND (max_amount IS NULL OR max_amount >= ?) ORDER BY min_amount DESC LIMIT 1',
+    amount, amount
   );
   return rows.length > 0 ? rows[0].fee_amount : 0;
 }
@@ -116,10 +93,7 @@ export async function calculateFee(type, amount) {
 export async function addTransaction(type, amount, fee) {
   if (!db) await initDatabase();
   const result = await db.runAsync(
-    'INSERT INTO transactions (type, amount, fee) VALUES (?, ?, ?)',
-    type,
-    amount,
-    fee
+    'INSERT INTO transactions (type, amount, fee) VALUES (?, ?, ?)', type, amount, fee
   );
   return result.lastInsertRowId;
 }
@@ -133,75 +107,42 @@ export async function getTodayTransactions() {
 
 export async function getTransactionsByPeriod(period) {
   if (!db) await initDatabase();
-  let whereClause = '';
+  let w = '';
   switch (period) {
-    case 'today':
-      whereClause = "date(created_at) = date('now','localtime')";
-      break;
-    case 'yesterday':
-      whereClause = "date(created_at) = date('now','localtime','-1 day')";
-      break;
-    case '15days':
-      whereClause = "created_at >= datetime('now','localtime','-15 days')";
-      break;
-    case 'monthly':
-      whereClause = "strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')";
-      break;
-    case 'yearly':
-      whereClause = "strftime('%Y', created_at) = strftime('%Y', 'now','localtime')";
-      break;
-    default:
-      whereClause = "date(created_at) = date('now','localtime')";
+    case 'today': w = "date(created_at) = date('now','localtime')"; break;
+    case 'yesterday': w = "date(created_at) = date('now','localtime','-1 day')"; break;
+    case '15days': w = "created_at >= datetime('now','localtime','-15 days')"; break;
+    case 'monthly': w = "strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')"; break;
+    case 'yearly': w = "strftime('%Y', created_at) = strftime('%Y', 'now','localtime')"; break;
+    default: w = "date(created_at) = date('now','localtime')";
   }
-  return await db.getAllAsync(
-    `SELECT * FROM transactions WHERE ${whereClause} ORDER BY created_at DESC`
-  );
+  return await db.getAllAsync(`SELECT * FROM transactions WHERE ${w} ORDER BY created_at DESC`);
 }
 
 export async function getIncomeSummary(period) {
   if (!db) await initDatabase();
-  let whereClause = '';
+  let w = '';
   switch (period) {
-    case 'today':
-      whereClause = "date(created_at) = date('now','localtime')";
-      break;
-    case 'yesterday':
-      whereClause = "date(created_at) = date('now','localtime','-1 day')";
-      break;
-    case '15days':
-      whereClause = "created_at >= datetime('now','localtime','-15 days')";
-      break;
-    case 'monthly':
-      whereClause = "strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')";
-      break;
-    case 'yearly':
-      whereClause = "strftime('%Y', created_at) = strftime('%Y', 'now','localtime')";
-      break;
-    default:
-      whereClause = "date(created_at) = date('now','localtime')";
+    case 'today': w = "date(created_at) = date('now','localtime')"; break;
+    case 'yesterday': w = "date(created_at) = date('now','localtime','-1 day')"; break;
+    case '15days': w = "created_at >= datetime('now','localtime','-15 days')"; break;
+    case 'monthly': w = "strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')"; break;
+    case 'yearly': w = "strftime('%Y', created_at) = strftime('%Y', 'now','localtime')"; break;
+    default: w = "date(created_at) = date('now','localtime')";
   }
 
   const rows = await db.getAllAsync(
-    `SELECT
-       type,
-       COUNT(*) as count,
-       COALESCE(SUM(amount), 0) as total_amount,
-       COALESCE(SUM(fee), 0) as total_fee
-     FROM transactions
-     WHERE ${whereClause}
-     GROUP BY type`
+    `SELECT type, COUNT(*) as count, COALESCE(SUM(amount),0) as total_amount, COALESCE(SUM(fee),0) as total_fee
+     FROM transactions WHERE ${w} GROUP BY type`
   );
 
-  const summary = { cashin: { count: 0, amount: 0, fee: 0 }, cashout: { count: 0, amount: 0, fee: 0 }, totalFee: 0 };
-  for (const row of rows) {
-    if (row.type === 'cashin') {
-      summary.cashin = { count: row.count, amount: row.total_amount, fee: row.total_fee };
-    } else if (row.type === 'cashout') {
-      summary.cashout = { count: row.count, amount: row.total_amount, fee: row.total_fee };
-    }
+  const s = { cashin: { count: 0, amount: 0, fee: 0 }, cashout: { count: 0, amount: 0, fee: 0 }, totalFee: 0 };
+  for (const r of rows) {
+    if (r.type === 'cashin') s.cashin = { count: r.count, amount: r.total_amount, fee: r.total_fee };
+    else if (r.type === 'cashout') s.cashout = { count: r.count, amount: r.total_amount, fee: r.total_fee };
   }
-  summary.totalFee = summary.cashin.fee + summary.cashout.fee;
-  return summary;
+  s.totalFee = s.cashin.fee + s.cashout.fee;
+  return s;
 }
 
 export async function getAllTransactions() {
@@ -218,96 +159,102 @@ export async function deleteTransaction(id) {
 
 export async function getTelegramSettings() {
   if (!db) await initDatabase();
-  const rows = await db.getAllAsync('SELECT * FROM telegram_settings WHERE id = 1');
-  if (rows.length === 0) {
-    await db.runAsync(
-      'INSERT INTO telegram_settings (id, bot_token, chat_id, auto_send, last_sent_date) VALUES (1, ?, ?, 1, ?)',
-      '',
-      '',
-      ''
-    );
+  const r = await db.getAllAsync('SELECT * FROM telegram_settings WHERE id = 1');
+  if (r.length === 0) {
+    await db.runAsync('INSERT INTO telegram_settings (id, bot_token, chat_id, auto_send, last_sent_date) VALUES (1, ?, ?, 1, ?)', '', '', '');
     return { id: 1, bot_token: '', chat_id: '', auto_send: 1, last_sent_date: '' };
   }
-  return rows[0];
+  return r[0];
 }
 
 export async function updateTelegramSettings(botToken, chatId, autoSend) {
   if (!db) await initDatabase();
-  await db.runAsync(
-    'UPDATE telegram_settings SET bot_token = ?, chat_id = ?, auto_send = ? WHERE id = 1',
-    botToken,
-    chatId,
-    autoSend ? 1 : 0
-  );
+  await db.runAsync('UPDATE telegram_settings SET bot_token=?, chat_id=?, auto_send=? WHERE id=1', botToken, chatId, autoSend ? 1 : 0);
 }
 
 export async function updateLastSentDate(dateStr) {
   if (!db) await initDatabase();
-  await db.runAsync(
-    'UPDATE telegram_settings SET last_sent_date = ? WHERE id = 1',
-    dateStr
-  );
+  await db.runAsync('UPDATE telegram_settings SET last_sent_date=? WHERE id=1', dateStr);
 }
 
 // ─── App Settings ─────────────────────────────────────────────
 
 export async function getAppSetting(key) {
   if (!db) await initDatabase();
-  const rows = await db.getAllAsync('SELECT value FROM app_settings WHERE key = ?', key);
-  return rows.length > 0 ? rows[0].value : null;
+  const r = await db.getAllAsync('SELECT value FROM app_settings WHERE key = ?', key);
+  return r.length > 0 ? r[0].value : null;
 }
 
 export async function setAppSetting(key, value) {
   if (!db) await initDatabase();
-  await db.runAsync(
-    'INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)',
-    key,
-    String(value)
+  await db.runAsync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', key, String(value));
+}
+
+// ─── Transactions search ──────────────────────────────────────
+
+export async function searchTransactions(query) {
+  if (!db) await initDatabase();
+  const q = `%${query}%`;
+  return await db.getAllAsync(
+    `SELECT * FROM transactions
+     WHERE type LIKE ? OR CAST(amount AS TEXT) LIKE ? OR CAST(fee AS TEXT) LIKE ? OR created_at LIKE ?
+     ORDER BY created_at DESC LIMIT 100`,
+    q, q, q, q
   );
+}
+
+// ─── CSV Export ───────────────────────────────────────────────
+
+export async function getAllTransactionsForExport(period) {
+  if (!db) await initDatabase();
+  let w = '';
+  switch (period) {
+    case 'today': w = "date(created_at) = date('now','localtime')"; break;
+    case 'yesterday': w = "date(created_at) = date('now','localtime','-1 day')"; break;
+    case '15days': w = "created_at >= datetime('now','localtime','-15 days')"; break;
+    case 'monthly': w = "strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')"; break;
+    case 'yearly': w = "strftime('%Y', created_at) = strftime('%Y', 'now','localtime')"; break;
+    default: w = "1=1";
+  }
+  return await db.getAllAsync(`SELECT * FROM transactions WHERE ${w} ORDER BY created_at DESC`);
+}
+
+export function transactionsToCSV(txns) {
+  const header = 'ID,Type,Amount,Fee,Date & Time\n';
+  const rows = txns.map(t =>
+    `${t.id},${t.type === 'cashin' ? 'Cash In' : 'Cash Out'},${t.amount},${t.fee},${t.created_at}`
+  ).join('\n');
+  return header + rows;
 }
 
 // ─── Backup / Export ──────────────────────────────────────────
 
 export async function exportAllData() {
   if (!db) await initDatabase();
-  const transactions = await db.getAllAsync('SELECT * FROM transactions ORDER BY created_at DESC');
-  const feeSettings = await db.getAllAsync('SELECT * FROM fee_settings');
-  const tgSettings = await getTelegramSettings();
-  const appSettings = await db.getAllAsync('SELECT * FROM app_settings');
-
   return {
     version: '1.0',
     exportedAt: new Date().toISOString(),
-    transactions,
-    feeSettings,
-    telegramSettings: tgSettings,
-    appSettings,
+    transactions: await db.getAllAsync('SELECT * FROM transactions ORDER BY created_at DESC'),
+    feeSettings: await db.getAllAsync('SELECT * FROM fee_settings'),
+    telegramSettings: await getTelegramSettings(),
+    appSettings: await db.getAllAsync('SELECT * FROM app_settings'),
   };
 }
 
 export async function importAllData(data) {
   if (!db) await initDatabase();
-  // Clear existing data
   await db.execAsync('DELETE FROM transactions');
   await db.execAsync('DELETE FROM fee_settings');
-
-  // Import transactions
-  if (data.transactions && data.transactions.length > 0) {
+  if (data.transactions?.length) {
     for (const t of data.transactions) {
-      await db.runAsync(
-        'INSERT OR REPLACE INTO transactions (id, type, amount, fee, created_at) VALUES (?, ?, ?, ?, ?)',
-        t.id, t.type, t.amount, t.fee, t.created_at
-      );
+      await db.runAsync('INSERT OR REPLACE INTO transactions (id, type, amount, fee, created_at) VALUES (?,?,?,?,?)',
+        t.id, t.type, t.amount, t.fee, t.created_at);
     }
   }
-
-  // Import fee settings
-  if (data.feeSettings && data.feeSettings.length > 0) {
+  if (data.feeSettings?.length) {
     for (const f of data.feeSettings) {
-      await db.runAsync(
-        'INSERT OR REPLACE INTO fee_settings (id, type, min_amount, max_amount, fee_amount, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        f.id, f.type, f.min_amount, f.max_amount, f.fee_amount, f.created_at
-      );
+      await db.runAsync('INSERT OR REPLACE INTO fee_settings (id, type, min_amount, max_amount, fee_amount, created_at) VALUES (?,?,?,?,?,?)',
+        f.id, f.type, f.min_amount, f.max_amount, f.fee_amount, f.created_at);
     }
   }
 }
