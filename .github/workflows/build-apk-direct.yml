@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate keystore for signing
         run: |
-          keytool -genkey -v -keystore release.keystore -alias release \
+          keytool -genkey -v -keystore android/app/release.keystore -alias release \
             -keyalg RSA -keysize 2048 -validity 10000 \
             -storepass android -keypass android \
             -dname "CN=GCashPOS, OU=Dev, O=GCashPOS, L=City, ST=State, C=PH"
@@ -41,7 +41,7 @@ jobs:
           android {
             signingConfigs {
               release {
-                storeFile file('release.keystore')
+                storeFile file('./release.keystore')
                 storePassword 'android'
                 keyAlias 'release'
                 keyPassword 'android'
