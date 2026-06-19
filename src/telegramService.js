@@ -1,4 +1,4 @@
-import { getTelegramSettings, getIncomeSummary } from './database';
+import { getTelegramSettings, getIncomeSummary, updateLastSentDate } from './database';
 
 const TELEGRAM_API = 'https://api.telegram.org/bot';
 
@@ -65,8 +65,6 @@ export async function sendDailySummary(force = false) {
     const success = await sendTelegramMessage(settings.bot_token, settings.chat_id, message);
 
     if (success) {
-      // We need to update last sent date - import dynamically to avoid circular
-      const { updateLastSentDate } = require('./database');
       await updateLastSentDate(today);
     }
 

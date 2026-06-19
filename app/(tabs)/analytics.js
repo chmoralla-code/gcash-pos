@@ -52,7 +52,7 @@ export default function AnalyticsScreen() {
     labels: ['Cash In', 'Cash Out'],
     datasets: [
       {
-        data: [summary.cashin.fee || 0.1, summary.cashout.fee || 0.1],
+        data: [summary.cashin.fee, summary.cashout.fee],
         colors: [
           (opacity = 1) => `rgba(0, 166, 80, ${opacity})`,
           (opacity = 1) => `rgba(255, 107, 53, ${opacity})`,

@@ -295,7 +295,7 @@ export async function importAllData(data) {
   if (data.transactions && data.transactions.length > 0) {
     for (const t of data.transactions) {
       await db.runAsync(
-        'INSERT INTO transactions (id, type, amount, fee, created_at) VALUES (?, ?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO transactions (id, type, amount, fee, created_at) VALUES (?, ?, ?, ?, ?)',
         t.id, t.type, t.amount, t.fee, t.created_at
       );
     }
@@ -305,7 +305,7 @@ export async function importAllData(data) {
   if (data.feeSettings && data.feeSettings.length > 0) {
     for (const f of data.feeSettings) {
       await db.runAsync(
-        'INSERT INTO fee_settings (id, type, min_amount, max_amount, fee_amount, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO fee_settings (id, type, min_amount, max_amount, fee_amount, created_at) VALUES (?, ?, ?, ?, ?, ?)',
         f.id, f.type, f.min_amount, f.max_amount, f.fee_amount, f.created_at
       );
     }

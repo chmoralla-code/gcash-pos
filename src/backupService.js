@@ -58,7 +58,7 @@ export async function shareBackup() {
   }
 }
 
-export async function pickAndRestore() {
+export async function restoreLatestBackup() {
   try {
     // Document picking is more complex in Expo; for simplicity,
     // we'll look for the latest backup in the backups directory
