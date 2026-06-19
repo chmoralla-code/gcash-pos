@@ -55,14 +55,14 @@ jobs:
           }
           EOF
 
-      - name: Configure Gradle memory
+      - name: Configure Gradle
         run: |
-          # Write gradle.properties fresh (overwrite, don't append)
-          cat > android/gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError
-          org.gradle.parallel=true
-          android.useAndroidX=true
-          android.enableJetifier=true
+          # Append to existing gradle.properties (start with newline to avoid merge issues)
+          printf "\n" >> android/gradle.properties
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
+          hermesEnabled=true
+          newArchEnabled=true
           EOF
 
       - name: Build release APK (bundled JS)
