@@ -1,0 +1,75 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Expo prebuild (Android)
+        run: npx expo prebuild --platform android --no-install
+        env:
+          EXPO_DEBUG: true
+
+      - name: Build debug APK
+        working-directory: ./android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcash-pos-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Rename APK for release
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk GCash-POS-v1.0.0.apk
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/master'
+        with:
+          tag_name: v1.0.0
+          name: "GCash POS v1.0.0"
+          body: |
+            ## GCash POS v1.0.0
+
+            ### Features
+            - 📊 **Dashboard** — See today's total income, Cash In/Out stats, and transaction list
+            - 💰 **Record Sale** — Log Cash In/Out transactions with auto-fee calculation
+            - 📈 **Analytics** — Income tracking by Today, Yesterday, 15 Days, Monthly, Yearly
+            - ⚙️ **Fee Settings** — Configure custom fee tiers for Cash In and Cash Out
+            - 🤖 **Telegram Monitoring** — Auto-send daily summaries to Telegram
+            - 💾 **Auto Backup** — Automatic local backups on every transaction
+
+            ### Download
+            Download the APK below to install on your Android device.
+          files: GCash-POS-v1.0.0.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

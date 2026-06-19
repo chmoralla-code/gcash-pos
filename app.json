@@ -16,16 +16,30 @@
     },
     "android": {
       "package": "com.gcash.pos",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0078D4",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
+          }
+        }
+      ]
     ],
     "web": {
       "favicon": "./assets/favicon.png"
