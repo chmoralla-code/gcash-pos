@@ -55,10 +55,19 @@ jobs:
           }
           EOF
 
+      - name: Configure Gradle memory
+        run: |
+          cat >> android/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.parallel=true
+          android.useAndroidX=true
+          EOF
+
       - name: Build release APK (bundled JS)
         run: |
           cd android
-          ./gradlew assembleRelease --no-daemon
+          export GRADLE_OPTS="-Xmx4g -XX:MaxMetaspaceSize=1g"
+          ./gradlew assembleRelease --no-daemon -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
