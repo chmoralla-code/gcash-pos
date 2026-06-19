@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { Audio } from 'expo-av';
+import { Audio } from 'expo-audio';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../src/constants';
@@ -29,10 +29,8 @@ export default function RecordSaleScreen() {
 
   const playSound = async () => {
     try {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg' },
-        { shouldPlay: true }
-      );
+      const sound = new Audio.Sound({ uri: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg' });
+      await sound.playAsync();
       setTimeout(() => sound.unloadAsync(), 1000);
     } catch (e) { /* sound optional */ }
   };
