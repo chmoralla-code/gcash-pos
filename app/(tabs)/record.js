@@ -4,7 +4,6 @@ import {
   Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { createAudioPlayer } from 'expo-audio';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency } from '../../src/constants';
 import { useTheme } from '../../src/ThemeContext';
@@ -28,6 +27,7 @@ export default function RecordSaleScreen() {
 
   const playSound = async () => {
     try {
+      const { createAudioPlayer } = require('expo-audio');
       const player = createAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg' });
       player.play();
     } catch (e) { /* sound optional */ }
