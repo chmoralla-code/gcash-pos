@@ -1,22 +1,32 @@
 {
   "expo": {
-    "name": "gcash-pos",
+    "name": "GCash POS",
     "slug": "gcash-pos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "gcash-pos",
+    "splash": {
+      "backgroundColor": "#0078D4"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gcash.pos"
     },
     "android": {
+      "package": "com.gcash.pos",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0078D4",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       }
     },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite"
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }
