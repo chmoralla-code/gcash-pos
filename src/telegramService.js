@@ -1,5 +1,5 @@
 import { getTelegramSettings, getIncomeSummary, updateLastSentDate, getAllTransactions } from './database';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const TELEGRAM_API = 'https://api.telegram.org/bot';
 
