@@ -63,14 +63,14 @@ export default function FeeSettingsScreen() {
       resetForm();
       await loadData();
     } catch (e) {
-      Alert.alert('Error', 'Failed to save fee setting.');
+      Alert.alert('Error', 'Failed to save fee setting: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
   const handleDelete = (id) => {
     Alert.alert('Delete Fee Tier', 'Delete this fee tier?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteFeeSetting(id); await loadData(); } },
+      { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteFeeSetting(id); await loadData(); } catch(e) { Alert.alert("Error", "Delete failed: " + e.message); } } },
     ]);
   };
 
