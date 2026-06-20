@@ -148,7 +148,7 @@ export default function RecordSaleScreen() {
             <Text style={[styles.feeTierTitle, { color: C.primary }]}>Fee Tiers:</Text>
             {feeTiers.map((tier) => (
               <Text key={tier.id} style={[styles.feeTierText, { color: C.primaryDark }]}>
-                ₱{tier.min_amount.toLocaleString()}+ → Fee: ₱{tier.fee_amount.toLocaleString()}
+                ₱{tier.min_amount.toLocaleString()} - {tier.max_amount ? '₱'+tier.max_amount.toLocaleString() : '∞'} → Fee: ₱{tier.fee_amount.toLocaleString()}
               </Text>
             ))}
           </View>

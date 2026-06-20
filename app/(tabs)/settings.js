@@ -15,6 +15,7 @@ export default function FeeSettingsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingTier, setEditingTier] = useState(null);
   const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
   const [feeAmount, setFeeAmount] = useState('');
 
   const loadData = useCallback(async () => {
@@ -24,33 +25,39 @@ export default function FeeSettingsScreen() {
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
-  const resetForm = () => { setMinAmount(''); setFeeAmount(''); setEditingTier(null); };
+  const resetForm = () => { setMinAmount(''); setMaxAmount(''); setFeeAmount(''); setEditingTier(null); };
 
   const openAddModal = () => { resetForm(); setModalVisible(true); };
 
   const openEditModal = (tier) => {
     setEditingTier(tier);
     setMinAmount(String(tier.min_amount));
+    setMaxAmount(tier.max_amount ? String(tier.max_amount) : '');
     setFeeAmount(String(tier.fee_amount));
     setModalVisible(true);
   };
 
   const handleSave = async () => {
     if (!minAmount || !feeAmount) {
-      Alert.alert('Required', 'Amount and fee are required.');
+      Alert.alert('Required', 'Minimum amount and fee are required.');
       return;
     }
     const min = parseFloat(minAmount);
+    const max = maxAmount ? parseFloat(maxAmount) : null;
     const fee = parseFloat(feeAmount);
     if (isNaN(min) || isNaN(fee) || min < 0 || fee < 0) {
       Alert.alert('Invalid', 'Please enter valid numbers.');
       return;
     }
+    if (max !== null && max <= min) {
+      Alert.alert('Invalid', 'Maximum must be greater than minimum.');
+      return;
+    }
     try {
       if (editingTier) {
-        await updateFeeSetting(editingTier.id, min, null, fee);
+        await updateFeeSetting(editingTier.id, min, max, fee);
       } else {
-        await addFeeSetting(min, null, fee);
+        await addFeeSetting(min, max, fee);
       }
       setModalVisible(false);
       resetForm();
@@ -70,7 +77,7 @@ export default function FeeSettingsScreen() {
   const getNextTier = () => {
     if (feeTiers.length === 0) return 'No tiers configured';
     const sorted = [...feeTiers].sort((a, b) => a.min_amount - b.min_amount);
-    return `${sorted.length} fee tier(s) · Starts at ₱${sorted[0].min_amount.toLocaleString()}`;
+    return `${sorted.length} fee tier(s) · ₱${sorted[0].min_amount.toLocaleString()} - ${sorted[sorted.length-1].max_amount ? '₱'+sorted[sorted.length-1].max_amount.toLocaleString() : '∞'}`;
   };
 
   return (
@@ -126,9 +133,9 @@ export default function FeeSettingsScreen() {
           >
             <View style={styles.tierInfo}>
               <Text style={[styles.tierAmount, { color: C.text }]}>
-                ₱{tier.min_amount.toLocaleString()}+
+                ₱{tier.min_amount.toLocaleString()} - {tier.max_amount ? '₱'+tier.max_amount.toLocaleString() : '∞'}
               </Text>
-              <Text style={[styles.tierLabel, { color: C.textLight }]}>Amount</Text>
+              <Text style={[styles.tierLabel, { color: C.textLight }]}>Amount Range</Text>
             </View>
             <Ionicons name="arrow-forward" size={16} color={C.textLight} />
             <View style={styles.tierFeeRight}>
@@ -157,10 +164,7 @@ export default function FeeSettingsScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.modalLabel, { color: C.textSecondary }]}>Amount (₱)</Text>
-            <Text style={[styles.modalHint, { color: C.textLight }]}>
-              Minimum amount to trigger this fee. Higher amounts use the closest matching tier.
-            </Text>
+            <Text style={[styles.modalLabel, { color: C.textSecondary }]}>Minimum Amount (₱)</Text>
             <TextInput
               style={[styles.modalInput, { backgroundColor: C.background, color: C.text, borderColor: C.border }]}
               placeholder="e.g. 1"
@@ -168,6 +172,17 @@ export default function FeeSettingsScreen() {
               keyboardType="decimal-pad"
               value={minAmount}
               onChangeText={setMinAmount}
+            />
+
+            <Text style={[styles.modalLabel, { color: C.textSecondary }]}>Maximum Amount (₱)</Text>
+            <Text style={[styles.modalHint, { color: C.textLight }]}>Leave blank for unlimited</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: C.background, color: C.text, borderColor: C.border }]}
+              placeholder="e.g. 500"
+              placeholderTextColor={C.textLight}
+              keyboardType="decimal-pad"
+              value={maxAmount}
+              onChangeText={setMaxAmount}
             />
 
             <Text style={[styles.modalLabel, { color: C.textSecondary }]}>Fee (₱)</Text>
