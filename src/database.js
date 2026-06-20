@@ -155,6 +155,11 @@ export async function deleteTransaction(id) {
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
 }
 
+export async function clearTodayTransactions() {
+  if (!db) await initDatabase();
+  await db.execAsync("DELETE FROM transactions WHERE date(created_at) = date('now','localtime')");
+}
+
 // ─── Telegram Settings ────────────────────────────────────────
 
 export async function getTelegramSettings() {

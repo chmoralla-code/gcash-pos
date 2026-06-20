@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, RefreshControl,
   TouchableOpacity, Alert, TextInput,
@@ -11,7 +11,7 @@ import { formatCurrency, formatDateTime } from '../../src/constants';
 import { useTheme } from '../../src/ThemeContext';
 import {
   getTodayTransactions, getIncomeSummary, deleteTransaction, searchTransactions,
-  getAllTransactionsForExport, transactionsToCSV,
+  getAllTransactionsForExport, transactionsToCSV, clearTodayTransactions,
 } from '../../src/database';
 import { sendDailySummary } from '../../src/telegramService';
 
@@ -28,6 +28,17 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [searching, setSearching] = useState(false);
+  const [phTime, setPhTime] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setPhTime(now.toLocaleTimeString('en-PH', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Manila' }));
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -94,10 +105,13 @@ export default function DashboardScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      {/* Date */}
-      <Text style={[styles.dateTitle, { color: C.textSecondary }]}>
-        {new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-      </Text>
+      {/* Date & Time */}
+      <View style={[styles.dateRow]}>
+        <Text style={[styles.dateTitle, { color: C.textSecondary }]}>
+          {new Date().toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </Text>
+        <Text style={[styles.clock, { color: C.primary }]}>{phTime}</Text>
+      </View>
 
       {/* Total Income Card */}
       <View style={[styles.totalCard, { backgroundColor: C.primary }]}>
@@ -174,6 +188,30 @@ export default function DashboardScreen() {
         </View>
       </ScrollView>
 
+      {/* Clear Today */}
+      {!searching && transactions.length > 0 && (
+        <TouchableOpacity
+          style={[styles.clearBtn, { backgroundColor: C.danger }]}
+          onPress={() => Alert.alert(
+            'Clear Today\'s Sales',
+            'Delete ALL transactions for today? This cannot be undone.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Clear All', style: 'destructive',
+                onPress: async () => {
+                  await clearTodayTransactions();
+                  await loadData();
+                },
+              },
+            ]
+          )}
+        >
+          <Ionicons name="trash-outline" size={16} color="#fff" />
+          <Text style={styles.clearBtnText}>Clear Today's Sales</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Transactions */}
       <Text style={[styles.sectionTitle, { color: C.text }]}>
         {searching ? 'Search Results' : "Today's Transactions"} ({transactions.length})
@@ -215,7 +253,9 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, paddingBottom: 100 },
-  dateTitle: { fontSize: 14, marginBottom: 12 },
+  dateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  dateTitle: { fontSize: 14 },
+  clock: { fontSize: 14, fontWeight: 'bold' },
   totalCard: { borderRadius: 16, padding: 20, marginBottom: 12, elevation: 4, shadowColor: '#0078D4', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
   totalLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '500' },
   totalAmount: { color: '#fff', fontSize: 36, fontWeight: 'bold', marginVertical: 8 },
@@ -240,6 +280,8 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 16, marginTop: 12 },
   emptySubText: { fontSize: 13, marginTop: 4 },
+  clearBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, padding: 12, marginBottom: 12 },
+  clearBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   txnCard: { borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
   txnLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   txnIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },

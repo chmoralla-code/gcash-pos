@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
 import { formatCurrency, PERIODS } from '../../src/constants';
 import { useTheme } from '../../src/ThemeContext';
-import { getIncomeSummary, getTransactionsByPeriod } from '../../src/database';
+import { getIncomeSummary, getTransactionsByPeriod, deleteTransaction } from '../../src/database';
 
 const sw = Dimensions.get('window').width;
 const PERIODS_LIST = [
@@ -92,7 +92,13 @@ export default function AnalyticsScreen() {
       {transactions.length === 0 ? (
         <View style={styles.emptyState}><Ionicons name="document-text-outline" size={40} color={C.textLight} /><Text style={[styles.emptyText, { color: C.textSecondary }]}>No transactions</Text></View>
       ) : transactions.map(t => (
-        <View key={t.id} style={[styles.txn, { backgroundColor: C.surface }]}>
+        <TouchableOpacity key={t.id} style={[styles.txn, { backgroundColor: C.surface }]}
+          onLongPress={() => Alert.alert('Delete Transaction', 'Delete this record?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: async () => { await deleteTransaction(t.id); await loadData(); } },
+          ])}
+          activeOpacity={0.7}
+        >
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Ionicons name={t.type === 'cashin' ? 'arrow-down-circle' : 'arrow-up-circle'} size={20} color={t.type === 'cashin' ? C.cashin : C.cashout} />
             <View>
@@ -104,7 +110,7 @@ export default function AnalyticsScreen() {
             <Text style={[styles.txnAmt, { color: C.text }]}>{formatCurrency(t.amount)}</Text>
             <Text style={[styles.txnFeeSmall, { color: C.textLight }]}>Fee: {formatCurrency(t.fee)}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
