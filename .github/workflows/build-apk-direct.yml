@@ -35,13 +35,16 @@ jobs:
           newArchEnabled=true
           GRADLE
 
-      - name: Build debug APK
+      # Release build creates the JS bundle (debug builds skip bundling
+      # expecting Metro dev server). The generated build.gradle already
+      # signs release builds with the debug.keystore from prebuild.
+      - name: Build release APK
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: gcash-pos-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
