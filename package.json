@@ -32,7 +32,18 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest --no-cache --forceExit"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@react-native/jest-preset": "^0.86.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@testing-library/react-native": "^14.0.0",
+    "babel-preset-expo": "^56.0.15",
+    "jest": "^30.4.2",
+    "jest-expo": "^56.0.5",
+    "react-test-renderer": "^19.2.7"
+  }
 }
