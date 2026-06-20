@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { formatCurrency, formatDateTime } from '../../src/constants';
@@ -12,6 +13,7 @@ import { useTheme } from '../../src/ThemeContext';
 import {
   getTodayTransactions, getIncomeSummary, deleteTransaction, searchTransactions,
   getAllTransactionsForExport, transactionsToCSV, clearTodayTransactions,
+  importTransactionsFromCSV, getBestDay,
 } from '../../src/database';
 import { sendDailySummary } from '../../src/telegramService';
 
@@ -76,16 +78,34 @@ export default function DashboardScreen() {
       const txns = await getAllTransactionsForExport(period);
       if (txns.length === 0) { Alert.alert('No Data', 'No transactions for this period.'); return; }
       const csv = transactionsToCSV(txns);
-      const path = `${FileSystem.documentDirectory}cycash-${period}.csv`;
-      await FileSystem.writeAsStringAsync(path, csv);
+      const path = `${FileSystem.cacheDirectory}cycash-${period}.csv`;
+      await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
       const available = await Sharing.isAvailableAsync();
       if (available) {
-        await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Export Transactions' });
+        await Sharing.shareAsync(path, { mimeType: 'text/*', dialogTitle: 'Export Transactions' });
       } else {
         Alert.alert('Exported', `File saved to ${path}`);
       }
     } catch (e) {
-      Alert.alert('Error', 'Export failed.');
+      Alert.alert('Export Error', e.message || 'Export failed.');
+    }
+  };
+
+  const handleImport = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      const csvText = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.UTF8 });
+      const res = await importTransactionsFromCSV(csvText);
+      if (res.success) {
+        Alert.alert('Imported!', `${res.count} transactions imported.`);
+        await loadData();
+      } else {
+        Alert.alert('Import Error', res.error);
+      }
+    } catch (e) {
+      Alert.alert('Import Error', e.message || 'Failed to import.');
     }
   };
 
@@ -94,6 +114,15 @@ export default function DashboardScreen() {
     if (r.success) Alert.alert('Sent!', 'Summary sent to Telegram.');
     else Alert.alert('Error', r.error || 'Check Telegram settings.');
   };
+
+  const [bestDay, setBestDay] = useState(null);
+
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      const bd = await getBestDay();
+      setBestDay(bd);
+    })();
+  }, []));
 
   const todayProfit = summary.totalFee;
   const cashinTotal = summary.cashin.amount;
@@ -171,12 +200,16 @@ export default function DashboardScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={[styles.actionBtn, { backgroundColor: C.secondary }]} onPress={() => handleExport('today')}>
           <Ionicons name="download-outline" size={16} color="#fff" />
-          <Text style={styles.actionBtnText}>CSV</Text>
+          <Text style={styles.actionBtnText}>Export</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: C.primary }]} onPress={handleImport}>
+          <Ionicons name="cloud-upload-outline" size={16} color="#fff" />
+          <Text style={styles.actionBtnText}>Import</Text>
         </TouchableOpacity>
       </View>
 
       {/* CSV Period Options */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {QUICK_CSV_PERIODS.map((p) => (
             <TouchableOpacity key={p.key} style={[styles.csvPeriodBtn, { backgroundColor: C.surface, borderColor: C.border }]}
@@ -187,6 +220,23 @@ export default function DashboardScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Best Day Card */}
+      {bestDay && (
+        <View style={[styles.bestDayCard, { backgroundColor: C.surface, borderColor: C.profit }]}>
+          <Ionicons name="trophy" size={20} color={C.profit} />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={[styles.bestDayLabel, { color: C.textSecondary }]}>Best Day</Text>
+            <Text style={[styles.bestDayDate, { color: C.text }]}>
+              {new Date(bestDay.day + 'T12:00:00').toLocaleDateString('en-PH', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={[styles.bestDayAmount, { color: C.profit }]}>{formatCurrency(bestDay.total_fee)}</Text>
+            <Text style={[styles.bestDayCount, { color: C.textLight }]}>{bestDay.count} transactions</Text>
+          </View>
+        </View>
+      )}
 
       {/* Clear Today */}
       {!searching && transactions.length > 0 && (
@@ -282,6 +332,11 @@ const styles = StyleSheet.create({
   emptySubText: { fontSize: 13, marginTop: 4 },
   clearBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, padding: 12, marginBottom: 12 },
   clearBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  bestDayCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 12, borderLeftWidth: 4, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+  bestDayLabel: { fontSize: 12 },
+  bestDayDate: { fontSize: 13, fontWeight: '600', marginTop: 1 },
+  bestDayAmount: { fontSize: 18, fontWeight: 'bold' },
+  bestDayCount: { fontSize: 11, marginTop: 1 },
   txnCard: { borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
   txnLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   txnIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },

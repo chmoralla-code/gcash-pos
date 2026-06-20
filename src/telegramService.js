@@ -1,4 +1,5 @@
-import { getTelegramSettings, getIncomeSummary, updateLastSentDate } from './database';
+import { getTelegramSettings, getIncomeSummary, updateLastSentDate, getAllTransactions } from './database';
+import * as FileSystem from 'expo-file-system';
 
 const TELEGRAM_API = 'https://api.telegram.org/bot';
 
@@ -18,6 +19,34 @@ export async function sendTelegramMessage(botToken, chatId, message) {
     return data.ok;
   } catch (error) {
     console.error('Telegram send error:', error);
+    return false;
+  }
+}
+
+export async function sendBackupFileViaTelegram(botToken, chatId) {
+  try {
+    const txns = await getAllTransactions();
+    const backup = { version: '1.0', exportedAt: new Date().toISOString(), transactions: txns };
+    const json = JSON.stringify(backup, null, 2);
+    const path = `${FileSystem.cacheDirectory}cycash-backup.json`;
+    await FileSystem.writeAsStringAsync(path, json, { encoding: FileSystem.EncodingType.UTF8 });
+
+    // Use multipart/form-data to send file via Telegram API
+    const url = `${TELEGRAM_API}${botToken}/sendDocument`;
+    const formData = new FormData();
+    formData.append('chat_id', chatId);
+    formData.append('document', { uri: path, type: 'application/json', name: 'cycash-backup.json' });
+    formData.append('caption', '📁 CyCash backup file — import this if you reinstall the app.');
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    const data = await response.json();
+    return data.ok;
+  } catch (error) {
+    console.error('Telegram send backup error:', error);
     return false;
   }
 }

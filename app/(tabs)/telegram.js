@@ -4,7 +4,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/ThemeContext';
 import { getTelegramSettings, updateTelegramSettings } from '../../src/database';
-import { sendDailySummary, testTelegramConnection } from '../../src/telegramService';
+import { sendDailySummary, testTelegramConnection, sendBackupFileViaTelegram } from '../../src/telegramService';
 
 export default function TelegramSettingsScreen() {
   const { colors: C } = useTheme();
@@ -40,6 +40,16 @@ export default function TelegramSettingsScreen() {
     setSending(false);
     if (r.success) Alert.alert('Sent!', 'Summary sent.');
     else Alert.alert('Error', r.error || 'Failed.');
+  };
+
+  const [sendingBackup, setSendingBackup] = useState(false);
+  const handleSendBackup = async () => {
+    if (!botToken.trim() || !chatId.trim()) { Alert.alert('Missing', 'Enter Bot Token and Chat ID.'); return; }
+    setSendingBackup(true);
+    const ok = await sendBackupFileViaTelegram(botToken.trim(), chatId.trim());
+    setSendingBackup(false);
+    if (ok) Alert.alert('Sent!', 'Backup file sent to Telegram.');
+    else Alert.alert('Error', 'Failed to send backup.');
   };
 
   return (
@@ -97,6 +107,9 @@ export default function TelegramSettingsScreen() {
       </TouchableOpacity>
       <TouchableOpacity style={[styles.btn, { backgroundColor: C.secondary }]} onPress={handleSendNow} disabled={sending}>
         <Ionicons name="paper-plane" size={18} color="#fff" /><Text style={styles.btnText}>{sending ? 'Sending...' : 'Send Summary Now'}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.btn, { backgroundColor: C.profit }]} onPress={handleSendBackup} disabled={sendingBackup}>
+        <Ionicons name="folder-outline" size={18} color="#fff" /><Text style={styles.btnText}>{sendingBackup ? 'Sending...' : 'Send Backup File'}</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.btn, { backgroundColor: C.primary }]} onPress={handleSave}>
         <Ionicons name="save" size={18} color="#fff" /><Text style={styles.btnText}>Save Settings</Text>

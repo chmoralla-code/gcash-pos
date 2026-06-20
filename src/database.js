@@ -160,6 +160,46 @@ export async function clearTodayTransactions() {
   await db.execAsync("DELETE FROM transactions WHERE date(created_at) = date('now','localtime')");
 }
 
+export async function getBestDay() {
+  if (!db) await initDatabase();
+  const rows = await db.getAllAsync(
+    "SELECT date(created_at) as day, SUM(fee) as total_fee, COUNT(*) as count FROM transactions GROUP BY day ORDER BY total_fee DESC LIMIT 1"
+  );
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function importTransactionsFromCSV(csvText) {
+  if (!db) await initDatabase();
+  const lines = csvText.trim().split('\n');
+  if (lines.length < 2) return { success: false, error: 'No data rows' };
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const typeIdx = headers.indexOf('type');
+  const amountIdx = headers.indexOf('amount');
+  const feeIdx = headers.indexOf('fee');
+  const dateIdx = headers.indexOf('date & time') > -1 ? headers.indexOf('date & time') : headers.indexOf('date');
+  
+  if (typeIdx === -1 || amountIdx === -1) return { success: false, error: 'Invalid CSV format' };
+  
+  let imported = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',');
+    const type = (cols[typeIdx] || '').trim().toLowerCase().includes('cash in') ? 'cashin' : 'cashout';
+    const amount = parseFloat(cols[amountIdx]);
+    const fee = feeIdx > -1 ? parseFloat(cols[feeIdx]) || 0 : 0;
+    const created_at = dateIdx > -1 && cols[dateIdx] ? cols[dateIdx].trim() : null;
+    
+    if (isNaN(amount) || amount <= 0) continue;
+    
+    if (created_at) {
+      await db.runAsync('INSERT INTO transactions (type, amount, fee, created_at) VALUES (?, ?, ?, ?)', type, amount, fee, created_at);
+    } else {
+      await db.runAsync('INSERT INTO transactions (type, amount, fee) VALUES (?, ?, ?)', type, amount, fee);
+    }
+    imported++;
+  }
+  return { success: true, count: imported };
+}
+
 // ─── Telegram Settings ────────────────────────────────────────
 
 export async function getTelegramSettings() {

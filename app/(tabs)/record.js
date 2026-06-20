@@ -63,9 +63,10 @@ export default function RecordSaleScreen() {
       await addTransaction(type, parsedAmount, finalFee);
       await createBackup();
       playSound();
+      const now = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' });
       Alert.alert(
         '✓ Recorded!',
-        `${type === 'cashin' ? 'Cash In' : 'Cash Out'}\nAmount: ${formatCurrency(parsedAmount)}\nFee: ${formatCurrency(finalFee)}`,
+        `${type === 'cashin' ? 'Cash In' : 'Cash Out'}\nAmount: ${formatCurrency(parsedAmount)}\nFee: ${formatCurrency(finalFee)}\nTime: ${now}`,
         [{ text: 'OK', onPress: () => { setAmount(''); setFee(0); } }]
       );
     } catch (e) {
