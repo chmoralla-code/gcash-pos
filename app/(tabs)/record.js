@@ -60,8 +60,13 @@ export default function RecordSaleScreen() {
     setLoading(true);
     try {
       const finalFee = await calculateFee(parsedAmount);
-      await addTransaction(type, parsedAmount, finalFee);
+      const { id, sync_id } = await addTransaction(type, parsedAmount, finalFee);
       await createBackup();
+      // Push to Supabase if configured
+      try {
+        const { pushTransactionToCloud } = require('../../src/supabaseService');
+        pushTransactionToCloud({ sync_id, type, amount: parsedAmount, fee: finalFee, created_at: new Date().toISOString() });
+      } catch (e) { /* cloud sync optional */ }
       playSound();
       const now = new Date().toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' });
       Alert.alert(

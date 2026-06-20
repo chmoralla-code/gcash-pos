@@ -20,6 +20,8 @@ export async function initDatabase() {
       type TEXT NOT NULL,
       amount REAL NOT NULL,
       fee REAL NOT NULL,
+      sync_id TEXT UNIQUE,
+      sync_status INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now','localtime'))
     );
 
@@ -36,6 +38,10 @@ export async function initDatabase() {
       value TEXT
     );
   `);
+
+  // Migrate: add sync_id and sync_status for existing DBs
+  try { await db.execAsync("ALTER TABLE transactions ADD COLUMN sync_id TEXT"); } catch (e) {}
+  try { await db.execAsync("ALTER TABLE transactions ADD COLUMN sync_status INTEGER DEFAULT 0"); } catch (e) {}
 
   const tgRows = await db.getAllAsync('SELECT id FROM telegram_settings WHERE id = 1');
   if (tgRows.length === 0) {
@@ -90,12 +96,46 @@ export async function calculateFee(amount) {
 
 // ─── Transactions ─────────────────────────────────────────────
 
+function generateSyncId() {
+  return 'sync_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+}
+
 export async function addTransaction(type, amount, fee) {
   if (!db) await initDatabase();
+  const syncId = generateSyncId();
   const result = await db.runAsync(
-    'INSERT INTO transactions (type, amount, fee) VALUES (?, ?, ?)', type, amount, fee
+    'INSERT INTO transactions (type, amount, fee, sync_id, sync_status) VALUES (?, ?, ?, ?, ?)',
+    type, amount, fee, syncId, 0
   );
-  return result.lastInsertRowId;
+  return { id: result.lastInsertRowId, sync_id: syncId };
+}
+
+export async function getUnsyncedTransactions() {
+  if (!db) await initDatabase();
+  return await db.getAllAsync('SELECT * FROM transactions WHERE sync_status = 0 ORDER BY created_at DESC');
+}
+
+export async function markTransactionsSynced(syncIds) {
+  if (!db) await initDatabase();
+  for (const sid of syncIds) {
+    await db.runAsync('UPDATE transactions SET sync_status = 1 WHERE sync_id = ?', sid);
+  }
+}
+
+export async function mergeRemoteTransactions(remote) {
+  if (!db) await initDatabase();
+  let count = 0;
+  for (const t of remote) {
+    const existing = await db.getAllAsync('SELECT id FROM transactions WHERE sync_id = ?', t.sync_id);
+    if (existing.length === 0 && t.type && t.amount) {
+      await db.runAsync(
+        'INSERT INTO transactions (type, amount, fee, sync_id, sync_status, created_at) VALUES (?, ?, ?, ?, 1, ?)',
+        t.type, t.amount, t.fee || 0, t.sync_id, t.created_at || new Date().toISOString()
+      );
+      count++;
+    }
+  }
+  return count;
 }
 
 export async function getTodayTransactions() {

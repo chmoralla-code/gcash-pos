@@ -2,7 +2,7 @@
   "expo": {
     "name": "CyCash",
     "slug": "cycash",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -16,7 +16,7 @@
     },
     "android": {
       "package": "com.cyrhiel.cycash",
-      "versionCode": 2,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#8000FF",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -31,6 +31,7 @@
       "expo-router",
       "expo-sqlite",
       "expo-document-picker",
+      "expo-updates",
       [
         "expo-build-properties",
         {
@@ -52,6 +53,12 @@
         "projectId": "0d810cfc-db6d-4805-a5d1-6e0bf36988e0"
       }
     },
-    "owner": "chmoralla-codes-team"
+    "owner": "chmoralla-codes-team",
+    "updates": {
+      "url": "https://u.expo.dev/0d810cfc-db6d-4805-a5d1-6e0bf36988e0"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
   }
 }

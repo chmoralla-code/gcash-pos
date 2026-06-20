@@ -44,6 +44,10 @@ export default function TabLayout() {
         title: 'Telegram', headerTitle: 'Telegram',
         tabBarIcon: ({ color, size }) => <Ionicons name="paper-plane" size={size} color={color} />,
       }} />
+      <Tabs.Screen name="cloud" options={{
+        title: 'Cloud', headerTitle: 'Cloud Sync',
+        tabBarIcon: ({ color, size }) => <Ionicons name="cloud" size={size} color={color} />,
+      }} />
     </Tabs>
   );
 }
