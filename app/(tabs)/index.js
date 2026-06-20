@@ -65,7 +65,7 @@ export default function DashboardScreen() {
       const txns = await getAllTransactionsForExport(period);
       if (txns.length === 0) { Alert.alert('No Data', 'No transactions for this period.'); return; }
       const csv = transactionsToCSV(txns);
-      const path = `${FileSystem.documentDirectory}gcash-pos-${period}.csv`;
+      const path = `${FileSystem.documentDirectory}cycash-${period}.csv`;
       await FileSystem.writeAsStringAsync(path, csv);
       const available = await Sharing.isAvailableAsync();
       if (available) {

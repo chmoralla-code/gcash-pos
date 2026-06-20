@@ -39,7 +39,7 @@ export async function sendDailySummary(force = false) {
     const summary = await getIncomeSummary('today');
 
     const message = `
-<b>💰 GCash POS — Daily Summary</b>
+<b>💰 CyCash — Daily Summary</b>
 📅 <b>${today}</b>
 
 ━━━━━━━━━━━━━━━━━━
@@ -59,7 +59,7 @@ export async function sendDailySummary(force = false) {
    <b>₱${Number(summary.totalFee).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</b>
 
 ━━━━━━━━━━━━━━━━━━
-<i>Sent from GCash POS App</i>
+<i>Sent from CyCash App</i>
     `.trim();
 
     const success = await sendTelegramMessage(settings.bot_token, settings.chat_id, message);
@@ -77,7 +77,7 @@ export async function sendDailySummary(force = false) {
 
 export async function testTelegramConnection(botToken, chatId) {
   try {
-    const message = `✅ <b>GCash POS Connected!</b>\n\nYour Telegram monitoring is now active.\nYou will receive daily sales summaries here.`;
+    const message = `✅ <b>CyCash Connected!</b>\n\nYour Telegram monitoring is now active.\nYou will receive daily sales summaries here.`;
     return await sendTelegramMessage(botToken, chatId, message);
   } catch (error) {
     return false;

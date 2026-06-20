@@ -49,7 +49,7 @@ export async function shareBackup() {
 
     await Sharing.shareAsync(result.path, {
       mimeType: 'application/json',
-      dialogTitle: 'Share GCash POS Backup',
+      dialogTitle: 'Share CyCash Backup',
     });
     return { success: true };
   } catch (error) {
