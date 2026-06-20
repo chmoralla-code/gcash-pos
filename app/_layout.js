@@ -15,7 +15,7 @@ async function setupNotifications() {
     if (status !== 'granted') return;
     await Notifications.cancelAllScheduledNotificationsAsync();
     await Notifications.scheduleNotificationAsync({
-      content: { title: '📊 End of Day', body: 'Check today\'s sales total!' },
+      content: { title: '📊 End of Day', body: "Check today's sales total!" },
       trigger: { hour: 20, minute: 0, repeats: true },
     });
   } catch (e) { /* notifications optional */ }
@@ -60,7 +60,7 @@ function RootLayoutInner() {
   if (!ready) {
     return (
       <View style={splashStyles.container}>
-        <Text style={splashStyles.title}>GCash POS</Text>
+        <Text style={splashStyles.title}>CyCash</Text>
         <Text style={splashStyles.sub}>Loading...</Text>
       </View>
     );
@@ -88,7 +88,7 @@ export default function RootLayout() {
 }
 
 const splashStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0078D4', alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#fff' },
+  container: { flex: 1, backgroundColor: '#8000FF', alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 36, fontWeight: 'bold', color: '#fff' },
   sub: { fontSize: 14, color: 'rgba(255,255,255,0.7)', marginTop: 8 },
 });

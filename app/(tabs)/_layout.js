@@ -25,15 +25,15 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{
-        title: 'Dashboard', headerTitle: 'GCash POS',
+        title: 'Dashboard', headerTitle: 'CyCash',
         tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
       }} />
       <Tabs.Screen name="record" options={{
-        title: 'Record Sale', headerTitle: 'Record Transaction',
+        title: 'Record Sale', headerTitle: 'Record',
         tabBarIcon: ({ color, size }) => <Ionicons name="add-circle" size={size} color={color} />,
       }} />
       <Tabs.Screen name="analytics" options={{
-        title: 'Analytics', headerTitle: 'Income Analytics',
+        title: 'Analytics', headerTitle: 'Analytics',
         tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" size={size} color={color} />,
       }} />
       <Tabs.Screen name="settings" options={{

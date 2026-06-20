@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, Modal, Switch,
+  TextInput, Alert, Modal, Switch, Linking,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -151,6 +151,14 @@ export default function FeeSettingsScreen() {
         <Text style={styles.addBtnText}>Add Fee Tier</Text>
       </TouchableOpacity>
 
+      {/* Credit Footer */}
+      <View style={styles.creditSection}>
+        <Text style={[styles.creditText, { color: C.textLight }]}>Developed by</Text>
+        <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com/profile.php?id=61584774638218')}>
+          <Text style={[styles.creditName, { color: C.primary }]}>Cyrhiel Moralla</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -236,4 +244,7 @@ const styles = StyleSheet.create({
   modalInput: { borderRadius: 10, padding: 14, fontSize: 16, borderWidth: 1 },
   saveBtn: { borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 20, elevation: 2 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  creditSection: { alignItems: 'center', paddingVertical: 30, marginTop: 10 },
+  creditText: { fontSize: 12, marginBottom: 4 },
+  creditName: { fontSize: 15, fontWeight: 'bold', textDecorationLine: 'underline' },
 });

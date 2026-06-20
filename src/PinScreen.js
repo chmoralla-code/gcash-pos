@@ -48,9 +48,9 @@ export default function PinScreen({ onUnlock }) {
 
   return (
     <View style={styles.container}>
-      <Ionicons name="lock-closed" size={48} color="#0078D4" style={{ marginBottom: 16 }} />
+      <Ionicons name="lock-closed" size={48} color="#8000FF" style={{ marginBottom: 16 }} />
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>GCash POS</Text>
+      <Text style={styles.subtitle}>CyCash</Text>
       <View style={styles.dotsRow}>
         {[1, 2, 3, 4].map(i => <View key={i} style={[styles.dot, pin.length >= i && styles.dotFilled]} />)}
       </View>
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: '#6B7280', marginBottom: 30 },
   dotsRow: { flexDirection: 'row', gap: 16, marginBottom: 40 },
   dot: { width: 16, height: 16, borderRadius: 8, backgroundColor: '#E5E7EB' },
-  dotFilled: { backgroundColor: '#0078D4' },
+  dotFilled: { backgroundColor: '#8000FF' },
   error: { color: '#DC3545', fontSize: 14, marginBottom: 20 },
   keypad: { flexDirection: 'row', flexWrap: 'wrap', width: 260, justifyContent: 'center' },
   key: { width: 80, height: 80, alignItems: 'center', justifyContent: 'center' },

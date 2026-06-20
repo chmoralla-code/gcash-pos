@@ -1,9 +1,9 @@
-// GCash POS - Theme & Constants
+// CyCash - Theme & Constants
 
 export const COLORS = {
-  primary: '#0078D4',
-  primaryDark: '#005A9E',
-  primaryLight: '#E6F4FE',
+  primary: '#8000FF',
+  primaryDark: '#6600CC',
+  primaryLight: '#F0E6FF',
   secondary: '#00A650',
   secondaryLight: '#E8F5E9',
   accent: '#FF6B35',
@@ -23,9 +23,9 @@ export const COLORS = {
 };
 
 export const DARK_COLORS = {
-  primary: '#4DA3E0',
-  primaryDark: '#7BBDE8',
-  primaryLight: '#1A3A4F',
+  primary: '#B066FF',
+  primaryDark: '#D199FF',
+  primaryLight: '#2A004F',
   secondary: '#4CAF50',
   secondaryLight: '#1A3A20',
   accent: '#FF8A65',

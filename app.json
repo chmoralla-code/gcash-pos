@@ -1,32 +1,30 @@
 {
   "expo": {
-    "name": "GCash POS",
-    "slug": "gcash-pos",
+    "name": "CyCash",
+    "slug": "cycash",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "gcash-pos",
+    "scheme": "cycash",
     "splash": {
-      "backgroundColor": "#0078D4"
+      "backgroundColor": "#8000FF"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gcash.pos"
+      "bundleIdentifier": "com.cyrhiel.cycash"
     },
     "android": {
-      "package": "com.gcash.pos",
+      "package": "com.cyrhiel.cycash",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0078D4",
+        "backgroundColor": "#8000FF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "permissions": [
-        "INTERNET",
-        "POST_NOTIFICATIONS",
-        "SCHEDULE_EXACT_ALARM"
+        "INTERNET"
       ]
     },
     "plugins": [
